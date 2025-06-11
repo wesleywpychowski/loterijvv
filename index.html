@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loterij Webinterface</title>
+    <title>Loterij Webinterface (met dubbele naam verwijdering)</title>
     <style>
-        /* CSS voor de vormgeving */
+        /* CSS is ongewijzigd */
         body {
             font-family: sans-serif;
             background-color: #f0f2f5;
@@ -126,6 +126,7 @@
         <textarea id="namen-input" placeholder="Jan Jansen
 Piet Pietersen
 Marie Mariën
+Jan Jansen
 ..."></textarea>
         <button id="btn-start">Start Loterij met deze Namen</button>
     </div>
@@ -138,7 +139,7 @@ Marie Mariën
             <p>De getrokken naam is:</p>
             <div id="getrokken-naam"></div>
             <div id="keuze-container">
-                <p><strong>Moet deze naam uit de lijst met deelnemers worden verwijderd?</strong></p>
+                <p><strong>Moet deze naam (en alle dubbele) uit de lijst worden verwijderd?</strong></p>
                 <div class="keuze-knoppen">
                     <button id="btn-verwijder-ja">Ja, verwijder</button>
                     <button id="btn-verwijder-nee">Nee, behoud</button>
@@ -163,45 +164,33 @@ Marie Mariën
 </div>
 
 <script>
-// JavaScript voor de logica
-
-// Stap 1: Variabelen declareren
 let deelnemers = [];
 let winnaars = [];
 let huidigeWinnaar = null;
 
-// Stap 2: HTML-elementen ophalen
 const namenInput = document.getElementById('namen-input');
 const btnStart = document.getElementById('btn-start');
 const btnTrek = document.getElementById('btn-trek');
 const btnVerwijderJa = document.getElementById('btn-verwijder-ja');
 const btnVerwijderNee = document.getElementById('btn-verwijder-nee');
-
 const trekkingSectie = document.querySelector('.trekking');
 const resultaatSectie = document.querySelector('.resultaat');
 const getrokkenNaamContainer = document.getElementById('getrokken-naam-container');
 const getrokkenNaamDiv = document.getElementById('getrokken-naam');
 const keuzeContainer = document.getElementById('keuze-container');
-
 const deelnemersLijstUl = document.getElementById('deelnemers-lijst');
 const winnaarsLijstUl = document.getElementById('winnaars-lijst');
 const aantalDeelnemersSpan = document.getElementById('aantal-deelnemers');
 const aantalWinnaarsSpan = document.getElementById('aantal-winnaars');
 
-// Stap 3: Functies definiëren
-
-/**
- * Leest de namen uit de textarea en start de loterij-interface.
- */
 function startLoterij() {
     const namenText = namenInput.value;
-    // Split op nieuwe regel, trim witruimte en filter lege regels
     deelnemers = namenText.split('\n')
                          .map(naam => naam.trim())
                          .filter(naam => naam.length > 0);
     
-    if (deelnemers.length < 2) {
-        alert("Voer minstens twee namen in om de loterij te starten.");
+    if (deelnemers.length < 1) { // Aangepast naar 1, want met 1 naam kun je nog steeds trekken.
+        alert("Voer minstens één naam in om de loterij te starten.");
         return;
     }
     
@@ -212,77 +201,58 @@ function startLoterij() {
     
     updateLijsten();
     btnTrek.disabled = false;
+    btnTrek.textContent = "Trek een Winnaar!";
 }
 
-/**
- * Werkt de weergave van de deelnemers- en winnaarslijsten bij.
- */
 function updateLijsten() {
-    // Leeg de huidige lijsten
     deelnemersLijstUl.innerHTML = '';
     winnaarsLijstUl.innerHTML = '';
 
-    // Vul de deelnemerslijst
     deelnemers.forEach(naam => {
         const li = document.createElement('li');
         li.textContent = naam;
         deelnemersLijstUl.appendChild(li);
     });
 
-    // Vul de winnaarslijst
     winnaars.forEach(naam => {
         const li = document.createElement('li');
         li.textContent = naam;
         winnaarsLijstUl.appendChild(li);
     });
     
-    // Update de tellingen
     aantalDeelnemersSpan.textContent = deelnemers.length;
     aantalWinnaarsSpan.textContent = winnaars.length;
     
-    // Schakel de trek-knop uit als er geen deelnemers meer zijn
     if (deelnemers.length === 0) {
         btnTrek.disabled = true;
         btnTrek.textContent = "Geen deelnemers meer!";
     }
 }
 
-/**
- * Trekt een willekeurige naam uit de deelnemerslijst.
- */
 function trekEenNaam() {
     if (deelnemers.length === 0) return;
 
     const randomIndex = Math.floor(Math.random() * deelnemers.length);
     huidigeWinnaar = deelnemers[randomIndex];
     
-    // Toon de winnaar en de keuzeknoppen
     getrokkenNaamDiv.textContent = huidigeWinnaar;
     getrokkenNaamContainer.style.display = 'block';
-    
-    // Verberg de hoofdknop en toon de keuzes
     btnTrek.style.display = 'none';
 }
 
-/**
- * Verwerkt de keuze van de gebruiker (naam verwijderen of niet).
- * @param {boolean} verwijder - True als de naam verwijderd moet worden.
- */
 function verwerkKeuze(verwijder) {
     if (huidigeWinnaar === null) return;
     
+    // === DE AANPASSING IS HIER ===
     if (verwijder) {
-        // Vind de index van de winnaar en verwijder deze
-        const index = deelnemers.indexOf(huidigeWinnaar);
-        if (index > -1) {
-            deelnemers.splice(index, 1);
-        }
+        // Gebruik filter() om een nieuwe lijst te maken zonder de getrokken naam.
+        // Dit verwijdert automatisch ALLE exemplaren van die naam.
+        deelnemers = deelnemers.filter(naam => naam !== huidigeWinnaar);
     }
+    // Als 'verwijder' false is, doen we niets met de deelnemerslijst.
     
-    // Voeg de naam toe aan de lijst met getrokken namen
     winnaars.push(huidigeWinnaar);
     
-    // Reset de interface voor de volgende trekking
     huidigeWinnaar = null;
     getrokkenNaamContainer.style.display = 'none';
     btnTrek.style.display = 'block';
@@ -290,7 +260,6 @@ function verwerkKeuze(verwijder) {
     updateLijsten();
 }
 
-// Stap 4: Event Listeners koppelen
 btnStart.addEventListener('click', startLoterij);
 btnTrek.addEventListener('click', trekEenNaam);
 btnVerwijderJa.addEventListener('click', () => verwerkKeuze(true));
