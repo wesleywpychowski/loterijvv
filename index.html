@@ -5,14 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loterij van Veldeke</title>
     <style>
-        /* CSS is ongewijzigd */
-        body { font-family: sans-serif; background-color: #ffe3ed; color: #333; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
+        body { font-family: sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
         .container { width: 100%; max-width: 900px; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1, h2 { text-align: center; color: #d64e78; }
+        
+        /* AANPASSING: Nieuwe stijlen voor de header */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px; /* Ruimte tussen logo en titel */
+            margin-bottom: 20px;
+        }
+        #logo {
+            height: 50px; /* Pas de hoogte aan naar wens */
+            width: auto;
+        }
+        .header-container h1 {
+            margin: 0; /* Verwijder standaard-marge van h1 voor betere uitlijning */
+            color: #1a73e8;
+            text-align: left;
+        }
+        
+        h2 { text-align: center; color: #333; }
         .setup, .trekking, .resultaat { margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 20px; }
         input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { display: block; width: 100%; padding: 12px; font-size: 16px; font-weight: bold; color: #fff; background-color: #32aca6; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; transition: background-color 0.3s; }
-        button:hover { background-color: #2f9b93; }
+        button { display: block; width: 100%; padding: 12px; font-size: 16px; font-weight: bold; color: #fff; background-color: #1a73e8; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; transition: background-color 0.3s; }
+        button:hover { background-color: #155ab6; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
         .lijsten-container { display: flex; justify-content: space-between; gap: 20px; }
         .lijst { width: 48%; }
@@ -21,8 +39,8 @@
         ul { list-style-type: none; padding: 0; background: #fafafa; border: 1px solid #eee; border-radius: 4px; min-height: 100px; padding: 10px; }
         li { padding: 8px; border-bottom: 1px solid #eee; }
         li:last-child { border-bottom: none; }
-        #getrokken-naam-container { text-align: center; padding: 20px; background: #edfbfb; border-radius: 5px; margin: 20px 0; }
-        #getrokken-naam { font-size: 2em; font-weight: bold; color: #32aca6; }
+        #getrokken-naam-container { text-align: center; padding: 20px; background: #e8f0fe; border-radius: 5px; margin: 20px 0; }
+        #getrokken-naam { font-size: 2em; font-weight: bold; color: #d93025; }
         #keuze-container { text-align: center; margin-top: 15px; }
         #keuze-container .keuze-knoppen { display: flex; justify-content: center; gap: 10px; }
         #keuze-container button { width: 150px; }
@@ -36,13 +54,16 @@
 <body>
 
 <div class="container">
-    <h1>🎯 Loterij van Veldeke</h1>
+    <div class="header-container">
+        <img src="veldeke-logo.png" alt="Logo Veldeke" id="logo">
+        <h1>Loterij van Veldeke</h1>
+    </div>
 
     <div class="setup">
         <h2>1. Deelnemers inladen</h2>
         <p>De standaardlijst wordt automatisch geladen. Plak eventueel een andere 'Publiceren op internet' URL van een Google Sheet (.csv).</p>
         <input type="text" id="sheet-url-input" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
-        <button id="btn-laad">Laad Namen van Ingevulde URL</button>
+        <button id="btn-laad">Laad namen van ingevulde URL</button>
         <div id="laad-status"></div>
     </div>
 
@@ -74,7 +95,7 @@
                 <ul id="deelnemers-lijst"></ul>
             </div>
             <div class="lijst">
-                 <h3>Getrokken namen (<span id="aantal-winnaars">0</span>)</h3>
+                 <h3>Getrokken Namen (<span id="aantal-winnaars">0</span>)</h3>
                 <ul id="winnaars-lijst"></ul>
             </div>
         </div>
@@ -82,19 +103,17 @@
 </div>
 
 <script>
+// JavaScript is ongewijzigd gebleven
 // Globale variabelen
 let deelnemers = [];
 let winnaars = [];
 let huidigeWinnaar = null;
 
-// AANPASSING: Standaard URL als constante
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT04sHVl_gx3B7c3Bw6zC8L8i8ojMIcGyNTEmXzt0Usb9aRKoytV5ldMnCU7tYFpdrvE8MX--woEQZN/pub?gid=1011097895&single=true&output=csv';
 
-// HTML Elementen ophalen
 const sheetUrlInput = document.getElementById('sheet-url-input');
 const btnLaad = document.getElementById('btn-laad');
 const laadStatus = document.getElementById('laad-status');
-// ... (rest van de elementen blijft hetzelfde)
 const trekkingSectie = document.querySelector('.trekking');
 const resultaatSectie = document.querySelector('.resultaat');
 const btnTrek = document.getElementById('btn-trek');
@@ -108,46 +127,31 @@ const winnaarsLijstUl = document.getElementById('winnaars-lijst');
 const aantalDeelnemersSpan = document.getElementById('aantal-deelnemers');
 const aantalWinnaarsSpan = document.getElementById('aantal-winnaars');
 
-
-// AANPASSING: De functie accepteert nu een optionele 'urlToLoad' parameter.
 async function laadNamenVanSheet(urlToLoad) {
-    // Als er een URL wordt meegegeven, gebruik die. Anders, gebruik de waarde van het input veld.
     const url = urlToLoad || sheetUrlInput.value.trim();
-    
     if (!url) {
         alert("Voer een geldige Google Sheet URL in.");
         return;
     }
-    
     laadStatus.textContent = "Namen worden geladen...";
     btnLaad.disabled = true;
-
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Netwerkfout: ${response.statusText}`);
         const csvText = await response.text();
-        
-        deelnemers = csvText.split('\n')
-                           .map(naam => naam.trim().replace(/"/g, ''))
-                           .filter(naam => naam.length > 0);
-        
+        deelnemers = csvText.split('\n').map(naam => naam.trim().replace(/"/g, '')).filter(naam => naam.length > 0);
         if (deelnemers.length === 0) throw new Error("Geen namen gevonden in de sheet.");
-
         winnaars = [];
-        // Verberg de setup sectie niet langer, maar toon wel de rest.
         trekkingSectie.style.display = 'block';
         resultaatSectie.style.display = 'block';
         laadStatus.textContent = `Lijst succesvol geladen met ${deelnemers.length} namen.`;
-        
         updateLijsten();
-
     } catch (error) {
         laadStatus.textContent = `Fout bij laden: ${error.message}.`;
     } finally {
         btnLaad.disabled = false;
     }
 }
-
 function schudDeelnemers() {
     let currentIndex = deelnemers.length;
     while (currentIndex !== 0) {
@@ -157,7 +161,6 @@ function schudDeelnemers() {
     }
     updateLijsten();
 }
-
 function updateLijsten() {
     deelnemersLijstUl.innerHTML = '';
     winnaarsLijstUl.innerHTML = '';
@@ -175,13 +178,8 @@ function updateLijsten() {
     aantalWinnaarsSpan.textContent = winnaars.length;
     btnTrek.disabled = (deelnemers.length === 0);
     btnSchudden.disabled = (deelnemers.length < 2);
-    if (deelnemers.length === 0) {
-        btnTrek.textContent = "Geen deelnemers meer!";
-    } else {
-        btnTrek.textContent = "Trek een Winnaar!";
-    }
+    btnTrek.textContent = (deelnemers.length === 0) ? "Geen deelnemers meer!" : "Trek een Winnaar!";
 }
-
 function trekEenNaam() {
     if (deelnemers.length === 0) return;
     const randomIndex = Math.floor(Math.random() * deelnemers.length);
@@ -190,7 +188,6 @@ function trekEenNaam() {
     getrokkenNaamContainer.style.display = 'block';
     btnTrek.style.display = 'none';
 }
-
 function verwerkKeuze(verwijder) {
     if (huidigeWinnaar === null) return;
     if (verwijder) {
@@ -202,24 +199,15 @@ function verwerkKeuze(verwijder) {
     btnTrek.style.display = 'block';
     updateLijsten();
 }
-
-// Event Listeners
-// AANPASSING: De knop roept nu de functie aan zonder parameter, zodat het de waarde uit het veld leest.
 btnLaad.addEventListener('click', () => laadNamenVanSheet());
-
 btnSchudden.addEventListener('click', schudDeelnemers);
 btnTrek.addEventListener('click', trekEenNaam);
 btnVerwijderJa.addEventListener('click', () => verwerkKeuze(true));
 btnVerwijderNee.addEventListener('click', () => verwerkKeuze(false));
-
-// AANPASSING: Nieuwe listener die wordt uitgevoerd zodra de pagina is geladen.
 document.addEventListener('DOMContentLoaded', () => {
-    // Vul het inputveld met de standaard URL zodat de gebruiker ziet wat er geladen is.
     sheetUrlInput.value = DEFAULT_SHEET_URL;
-    // Roep de laad-functie aan met de standaard URL.
     laadNamenVanSheet(DEFAULT_SHEET_URL);
 });
-
 </script>
 
 </body>
