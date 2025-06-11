@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loterij Machine met Google Sheets & Shuffle</title>
+    <title>Loterij Machine (met Standaard URL)</title>
     <style>
-        /* CSS is grotendeels ongewijzigd */
+        /* CSS is ongewijzigd */
         body { font-family: sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
         .container { width: 100%; max-width: 900px; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1, h2 { text-align: center; color: #1a73e8; }
@@ -40,9 +40,9 @@
 
     <div class="setup">
         <h2>1. Deelnemers Inladen</h2>
-        <p>Plak hier de 'Publiceren op internet' URL van je Google Sheet (.csv).</p>
-        <input type="text" id="sheet-url-input" placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-1vT04sHVl_gx3B7c3Bw6zC8L8i8ojMIcGyNTEmXzt0Usb9aRKoytV5ldMnCU7tYFpdrvE8MX--woEQZN/pub?gid=1011097895&single=true&output=csv">
-        <button id="btn-laad">Laad Namen van Sheet</button>
+        <p>De standaardlijst wordt automatisch geladen. Plak eventueel een andere 'Publiceren op internet' URL van een Google Sheet (.csv).</p>
+        <input type="text" id="sheet-url-input" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+        <button id="btn-laad">Laad Namen van Ingevulde URL</button>
         <div id="laad-status"></div>
     </div>
 
@@ -51,7 +51,16 @@
         <button id="btn-trek">Trek een Winnaar!</button>
         
         <div id="getrokken-naam-container" style="display: none;">
+            <p>De getrokken naam is:</p>
+            <div id="getrokken-naam"></div>
+            <div id="keuze-container">
+                <p><strong>Moet deze naam (en alle dubbele) uit de lijst worden verwijderd?</strong></p>
+                <div class="keuze-knoppen">
+                    <button id="btn-verwijder-ja">Ja, verwijder</button>
+                    <button id="btn-verwijder-nee">Nee, behoud</button>
+                </div>
             </div>
+        </div>
     </div>
 
     <div class="resultaat" style="display: none;">
@@ -78,28 +87,33 @@ let deelnemers = [];
 let winnaars = [];
 let huidigeWinnaar = null;
 
+// AANPASSING: Standaard URL als constante
+const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT04sHVl_gx3B7c3Bw6zC8L8i8ojMIcGyNTEmXzt0Usb9aRKoytV5ldMnCU7tYFpdrvE8MX--woEQZN/pub?gid=1011097895&single=true&output=csv';
+
 // HTML Elementen ophalen
 const sheetUrlInput = document.getElementById('sheet-url-input');
 const btnLaad = document.getElementById('btn-laad');
 const laadStatus = document.getElementById('laad-status');
-const btnTrek = document.getElementById('btn-trek');
-const btnSchudden = document.getElementById('btn-schudden');
-// ... (andere elementen blijven hetzelfde)
+// ... (rest van de elementen blijft hetzelfde)
 const trekkingSectie = document.querySelector('.trekking');
 const resultaatSectie = document.querySelector('.resultaat');
+const btnTrek = document.getElementById('btn-trek');
+const btnSchudden = document.getElementById('btn-schudden');
 const getrokkenNaamContainer = document.getElementById('getrokken-naam-container');
+const getrokkenNaamDiv = document.getElementById('getrokken-naam');
+const btnVerwijderJa = document.getElementById('btn-verwijder-ja');
+const btnVerwijderNee = document.getElementById('btn-verwijder-nee');
 const deelnemersLijstUl = document.getElementById('deelnemers-lijst');
 const winnaarsLijstUl = document.getElementById('winnaars-lijst');
 const aantalDeelnemersSpan = document.getElementById('aantal-deelnemers');
 const aantalWinnaarsSpan = document.getElementById('aantal-winnaars');
 
 
-/**
- * NIEUW: Laadt namen van de Google Sheet URL.
- * async/await wordt gebruikt om netjes om te gaan met de 'fetch' operatie.
- */
-async function laadNamenVanSheet() {
-    const url = sheetUrlInput.value.trim();
+// AANPASSING: De functie accepteert nu een optionele 'urlToLoad' parameter.
+async function laadNamenVanSheet(urlToLoad) {
+    // Als er een URL wordt meegegeven, gebruik die. Anders, gebruik de waarde van het input veld.
+    const url = urlToLoad || sheetUrlInput.value.trim();
+    
     if (!url) {
         alert("Voer een geldige Google Sheet URL in.");
         return;
@@ -110,113 +124,69 @@ async function laadNamenVanSheet() {
 
     try {
         const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Netwerkfout: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Netwerkfout: ${response.statusText}`);
         const csvText = await response.text();
         
-        // Verwerk de CSV tekst
         deelnemers = csvText.split('\n')
-                           .map(naam => naam.trim().replace(/"/g, '')) // Verwijder quotes
+                           .map(naam => naam.trim().replace(/"/g, ''))
                            .filter(naam => naam.length > 0);
         
-        if (deelnemers.length === 0) {
-            throw new Error("Geen namen gevonden in de sheet of het document is leeg.");
-        }
+        if (deelnemers.length === 0) throw new Error("Geen namen gevonden in de sheet.");
 
-        // Reset de interface en toon de loterij
         winnaars = [];
-        document.querySelector('.setup').style.display = 'none';
+        // Verberg de setup sectie niet langer, maar toon wel de rest.
         trekkingSectie.style.display = 'block';
         resultaatSectie.style.display = 'block';
-        btnTrek.disabled = false;
-        btnSchudden.disabled = false; // Schudden-knop nu actief
+        laadStatus.textContent = `Lijst succesvol geladen met ${deelnemers.length} namen.`;
         
         updateLijsten();
 
     } catch (error) {
-        laadStatus.textContent = `Fout bij laden: ${error.message}. Controleer de URL en de publicatie-instellingen.`;
-        alert(`Fout bij laden: ${error.message}`);
+        laadStatus.textContent = `Fout bij laden: ${error.message}.`;
     } finally {
         btnLaad.disabled = false;
     }
 }
 
-/**
- * NIEUW: Schud de deelnemerslijst willekeurig (Fisher-Yates Shuffle).
- */
 function schudDeelnemers() {
     let currentIndex = deelnemers.length;
-    
-    // Zolang er elementen zijn om te schudden...
     while (currentIndex !== 0) {
-        // Kies een resterend element...
         let randomIndex = Math.floor(Math.random() * currentIndex);
         currentIndex--;
-
-        // En wissel het met het huidige element.
         [deelnemers[currentIndex], deelnemers[randomIndex]] = [deelnemers[randomIndex], deelnemers[currentIndex]];
     }
-    
-    // Werk de lijst op het scherm bij om de nieuwe volgorde te tonen.
     updateLijsten();
 }
 
-
-/**
- * Update de lijsten op het scherm.
- */
 function updateLijsten() {
     deelnemersLijstUl.innerHTML = '';
     winnaarsLijstUl.innerHTML = '';
-
     deelnemers.forEach(naam => {
         const li = document.createElement('li');
         li.textContent = naam;
         deelnemersLijstUl.appendChild(li);
     });
-
     winnaars.forEach(naam => {
         const li = document.createElement('li');
         li.textContent = naam;
         winnaarsLijstUl.appendChild(li);
     });
-    
     aantalDeelnemersSpan.textContent = deelnemers.length;
     aantalWinnaarsSpan.textContent = winnaars.length;
-    
+    btnTrek.disabled = (deelnemers.length === 0);
+    btnSchudden.disabled = (deelnemers.length < 2);
     if (deelnemers.length === 0) {
-        btnTrek.disabled = true;
         btnTrek.textContent = "Geen deelnemers meer!";
     } else {
-        btnTrek.disabled = false;
         btnTrek.textContent = "Trek een Winnaar!";
     }
-
-    btnSchudden.disabled = (deelnemers.length < 2);
 }
-
-// De overige functies (trekEenNaam, verwerkKeuze) blijven exact hetzelfde
-// als in de vorige versie, dus die plakken we hieronder.
-// ... (code voor trekEenNaam en verwerkKeuze is hier nodig)
 
 function trekEenNaam() {
     if (deelnemers.length === 0) return;
     const randomIndex = Math.floor(Math.random() * deelnemers.length);
     huidigeWinnaar = deelnemers[randomIndex];
-    document.getElementById('getrokken-naam').textContent = huidigeWinnaar;
-    // Oorspronkelijke getrokken-naam-container had geen innerHTML, die voegen we hier toe
-    document.getElementById('getrokken-naam-container').innerHTML = `
-        <p>De getrokken naam is:</p>
-        <div id="getrokken-naam">${huidigeWinnaar}</div>
-        <div id="keuze-container">
-            <p><strong>Moet deze naam (en alle dubbele) uit de lijst worden verwijderd?</strong></p>
-            <div class="keuze-knoppen">
-                <button id="btn-verwijder-ja" onclick="verwerkKeuze(true)">Ja, verwijder</button>
-                <button id="btn-verwijder-nee" onclick="verwerkKeuze(false)">Nee, behoud</button>
-            </div>
-        </div>
-    `;
+    getrokkenNaamDiv.textContent = huidigeWinnaar;
     getrokkenNaamContainer.style.display = 'block';
     btnTrek.style.display = 'none';
 }
@@ -228,16 +198,27 @@ function verwerkKeuze(verwijder) {
     }
     winnaars.push(huidigeWinnaar);
     huidigeWinnaar = null;
-    document.getElementById('getrokken-naam-container').style.display = 'none';
+    getrokkenNaamContainer.style.display = 'none';
     btnTrek.style.display = 'block';
     updateLijsten();
 }
 
-
 // Event Listeners
-btnLaad.addEventListener('click', laadNamenVanSheet);
+// AANPASSING: De knop roept nu de functie aan zonder parameter, zodat het de waarde uit het veld leest.
+btnLaad.addEventListener('click', () => laadNamenVanSheet());
+
 btnSchudden.addEventListener('click', schudDeelnemers);
 btnTrek.addEventListener('click', trekEenNaam);
+btnVerwijderJa.addEventListener('click', () => verwerkKeuze(true));
+btnVerwijderNee.addEventListener('click', () => verwerkKeuze(false));
+
+// AANPASSING: Nieuwe listener die wordt uitgevoerd zodra de pagina is geladen.
+document.addEventListener('DOMContentLoaded', () => {
+    // Vul het inputveld met de standaard URL zodat de gebruiker ziet wat er geladen is.
+    sheetUrlInput.value = DEFAULT_SHEET_URL;
+    // Roep de laad-functie aan met de standaard URL.
+    laadNamenVanSheet(DEFAULT_SHEET_URL);
+});
 
 </script>
 
