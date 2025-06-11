@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loterij Machine (met Standaard URL)</title>
+    <title>Loterij van Veldeke (met Standaard URL)</title>
     <style>
         /* CSS is ongewijzigd */
         body { font-family: sans-serif; background-color: #ffe3ed; color: #333; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
@@ -36,10 +36,10 @@
 <body>
 
 <div class="container">
-    <h1>🎯 Loterij Machine</h1>
+    <h1>🎯 Loterij van Veldeke</h1>
 
     <div class="setup">
-        <h2>1. Deelnemers Inladen</h2>
+        <h2>1. Deelnemers inladen</h2>
         <p>De standaardlijst wordt automatisch geladen. Plak eventueel een andere 'Publiceren op internet' URL van een Google Sheet (.csv).</p>
         <input type="text" id="sheet-url-input" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
         <button id="btn-laad">Laad Namen van Ingevulde URL</button>
@@ -47,8 +47,8 @@
     </div>
 
     <div class="trekking" style="display: none;">
-        <h2>2. Trek een Naam</h2>
-        <button id="btn-trek">Trek een Winnaar!</button>
+        <h2>2. Trek een naam</h2>
+        <button id="btn-trek">Trek een winnaar!</button>
         
         <div id="getrokken-naam-container" style="display: none;">
             <p>De getrokken naam is:</p>
@@ -74,7 +74,7 @@
                 <ul id="deelnemers-lijst"></ul>
             </div>
             <div class="lijst">
-                 <h3>Getrokken Namen (<span id="aantal-winnaars">0</span>)</h3>
+                 <h3>Getrokken namen (<span id="aantal-winnaars">0</span>)</h3>
                 <ul id="winnaars-lijst"></ul>
             </div>
         </div>
